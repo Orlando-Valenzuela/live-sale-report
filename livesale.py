@@ -66,9 +66,20 @@ class CSVProcessor:
         self.dataframe.to_csv(output_filename, index=False)
 
 
+def find_csv_file():
+    # Get the current directory
+    current_directory = os.getcwd()
+    # Find the first CSV file in the current directory
+    for filename in os.listdir(current_directory):
+        if filename.endswith('.csv'):
+            return os.path.join(current_directory, filename)
+    # If no CSV file found, raise an exception
+    raise FileNotFoundError('No CSV file found in the current directory')
+
+
 def main():
-    # Prompt the user for the input filename
-    input_filename = input('Enter the input filename: ')
+    # Find the CSV file in the current directory
+    input_filename = find_csv_file()
     # Initialize a CSVProcessor object
     csv_processor = CSVProcessor(input_filename)
     # Load the CSV file
