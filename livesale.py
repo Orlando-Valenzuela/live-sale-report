@@ -72,7 +72,7 @@ class CSVProcessor:
     @staticmethod
     def save_csv(final_dataframe, output_filename):
         # Ensure the Output directory exists
-        os.makedirs('Output', exist_ok=True)
+        os.makedirs('./Output', exist_ok=True)
         # Save the final DataFrame as a CSV file in the Output directory
         final_dataframe.to_csv(f'Output/{output_filename}', index=False)
 
