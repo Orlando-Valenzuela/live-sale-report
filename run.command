@@ -15,7 +15,7 @@ if [ ! -d "./" ]; then
 fi
 
 # Read the contents of requirements.txt
-requirements=$(cat live-sale-report/requirements.txt)
+requirements=$(cat requirements.txt)
 
 # Iterate over each value in requirements.txt
 while IFS= read -r line; do
@@ -31,7 +31,7 @@ while IFS= read -r line; do
 done <<< "$requirements"
 
 # Verify all dependencies are up to date
-pip3 install --upgrade -r live-sale-report/requirements.txt
+pip3 install --upgrade -r requirements.txt
 
 # Run livesale.py
-python3 live-sale-report/livesale.py
+python3 livesale.py
