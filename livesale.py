@@ -3,8 +3,16 @@ import pandas as pd
 import numpy as np
 import re
 
+
 class CSVProcessor:
-    EXPECTED_HEADERS = ["Product Name", "Quantity Sold", "Current Stock Quantity", "live_sale_price", "Gross Sales", "Gross Sales (After Discounts)"]
+    EXPECTED_HEADERS = [
+        "Product Name",
+        "Quantity Sold",
+        "Current Stock Quantity",
+        "live_sale_price",
+        "Gross Sales",
+        "Gross Sales (After Discounts)",
+    ]
 
     def __init__(self, filename):
         self.filename = filename
@@ -34,7 +42,7 @@ class CSVProcessor:
              "Gross Sales": "sum",
              "Gross Sales (After Discounts)": "sum"}).reset_index()
         # Create Quantity Detail column
-        self.dataframe['Quantity Detail'] = self.dataframe['Quantity Sold'].astype(str) + ' of ' + (self.dataframe['Quantity Sold'] + self.dataframe['Current Stock Quantity']).astype(str)
+        self.dataframe['Quantity Detail'] = self.dataframe.apply(lambda row: f"{row['Quantity Sold']} of {row['Quantity Sold'] + row['Current Stock Quantity']}", axis=1)
         # Reorder columns
         self.dataframe = self.dataframe[["Product Name", "Quantity Detail", "Quantity Sold", "Current Stock Quantity", "live_sale_price", "Gross Sales", "Gross Sales (After Discounts)"]]
 
@@ -57,6 +65,7 @@ class CSVProcessor:
         # Save the final DataFrame as a CSV file in the Output directory
         self.dataframe.to_csv(output_filename, index=False)
 
+
 def main():
     # Prompt the user for the input filename
     input_filename = input('Enter the input filename: ')
@@ -72,6 +81,7 @@ def main():
     output_filename = csv_processor.get_output_filename()
     # Save the final DataFrame as a CSV file
     csv_processor.save_csv(output_filename)
+
 
 if __name__ == "__main__":
     main()
