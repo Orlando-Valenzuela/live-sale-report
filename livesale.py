@@ -6,87 +6,72 @@ import re
 class CSVProcessor:
     EXPECTED_HEADERS = ["Product Name", "Quantity Sold", "Current Stock Quantity", "live_sale_price", "Gross Sales", "Gross Sales (After Discounts)"]
 
-    @staticmethod
-    def load_first_csv():
-        # List all CSV files in the current directory
-        csv_files = [f for f in os.listdir() if f.endswith('.csv')]
-        assert csv_files, 'No CSV files found in the current directory'
+    def __init__(self, filename):
+        self.filename = filename
 
-        # Load the first CSV file into a pandas DataFrame
-        input_dataframe = pd.read_csv(csv_files[0])
+    def load_csv(self):
+        # Load CSV file into a pandas DataFrame
+        self.dataframe = pd.read_csv(self.filename)
         # Fill null values and set data types
-        input_dataframe["Quantity Sold"] = input_dataframe["Quantity Sold"].fillna(0).astype(int)
-        input_dataframe["Current Stock Quantity"] = input_dataframe["Current Stock Quantity"].fillna(0).astype(int)
-        input_dataframe["Gross Sales"] = input_dataframe["Gross Sales"].fillna(0.00).astype(float).round(2)
-        input_dataframe["Gross Sales (After Discounts)"] = input_dataframe["Gross Sales (After Discounts)"].fillna(0.00).astype(float).round(2)
-        input_dataframe["live_sale_price"] = input_dataframe["live_sale_price"].fillna(0.00).astype(float).round(2)
-        return input_dataframe
+        self.dataframe["Quantity Sold"] = self.dataframe["Quantity Sold"].fillna(0).astype(int)
+        self.dataframe["Current Stock Quantity"] = self.dataframe["Current Stock Quantity"].fillna(0).astype(int)
+        self.dataframe["Gross Sales"] = self.dataframe["Gross Sales"].fillna(0.00).astype(float).round(2)
+        self.dataframe["Gross Sales (After Discounts)"] = self.dataframe["Gross Sales (After Discounts)"].fillna(0.00).astype(float).round(2)
+        self.dataframe["live_sale_price"] = self.dataframe["live_sale_price"].fillna(0.00).astype(float).round(2)
 
-    @staticmethod
-    def verify_csv(input_dataframe):
+    def verify_csv(self):
         # Verify the DataFrame has all the expected headers
-        assert set(CSVProcessor.EXPECTED_HEADERS).issubset(input_dataframe.columns), 'The CSV file does not have the expected headers'
+        assert set(CSVProcessor.EXPECTED_HEADERS).issubset(self.dataframe.columns), 'The CSV file does not have the expected headers'
 
-    @staticmethod
-    def preprocess_df(input_dataframe):
+    def preprocess_df(self):
         # Preprocess the Product Name column
-        input_dataframe['Product Name'] = input_dataframe['Product Name'].astype(str).apply(lambda x: re.match("^[a-zA-Z0-9\s]*", x).group().upper())
-
+        self.dataframe['Product Name'] = self.dataframe['Product Name'].astype(str).apply(lambda x: re.match("^[a-zA-Z0-9\s]*", x).group().upper())
         # Group by Product Name and sum numeric columns
-        summed_dataframe = input_dataframe.groupby('Product Name').sum().reset_index()[["Product Name", "Quantity Sold", "Current Stock Quantity", "Gross Sales", "Gross Sales (After Discounts)"]]
-
-        # Group by Product Name and get minimum live_sale_price
-        min_price_dataframe = input_dataframe.groupby('Product Name').min().reset_index()[["Product Name", "live_sale_price"]]
-
-        # Merge the summed and minimum price dataframes
-        grouped_dataframe = pd.merge(summed_dataframe, min_price_dataframe, on='Product Name')
-
+        self.dataframe = self.dataframe.groupby('Product Name').agg(
+            {"Quantity Sold": "sum",
+             "Current Stock Quantity": "sum",
+             "live_sale_price": "min",
+             "Gross Sales": "sum",
+             "Gross Sales (After Discounts)": "sum"}).reset_index()
         # Create Quantity Detail column
-        grouped_dataframe['Quantity Detail'] = grouped_dataframe['Quantity Sold'].astype(str) + ' of ' + (grouped_dataframe['Quantity Sold'] + grouped_dataframe['Current Stock Quantity']).astype(str)
-
+        self.dataframe['Quantity Detail'] = self.dataframe['Quantity Sold'].astype(str) + ' of ' + (self.dataframe['Quantity Sold'] + self.dataframe['Current Stock Quantity']).astype(str)
         # Reorder columns
-        grouped_dataframe = grouped_dataframe[["Product Name", "Quantity Detail", "Quantity Sold", "Current Stock Quantity", "live_sale_price", "Gross Sales", "Gross Sales (After Discounts)"]]
+        self.dataframe = self.dataframe[["Product Name", "Quantity Detail", "Quantity Sold", "Current Stock Quantity", "live_sale_price", "Gross Sales", "Gross Sales (After Discounts)"]]
 
-        # Add two empty rows after each row
-        empty_rows = pd.DataFrame(index=pd.Index(['', '']*len(grouped_dataframe))).reset_index(drop=True)
-        final_dataframe = pd.concat([grouped_dataframe, empty_rows]).sort_index(kind='mergesort').reset_index(drop=True)
-
-        # Replace NaN values with an empty string
-        final_dataframe.replace(np.nan, '', inplace=True)
-
-        return final_dataframe
-
-    @staticmethod
-    def get_output_filename():
+    def get_output_filename(self):
+        # Ensure the Output directory exists
+        os.makedirs('Output', exist_ok=True)
         # Prompt the user for the output filename
         output_filename = input('Enter the desired output filename (default is "output.csv"): ') or 'output.csv'
+        output_filename = os.path.join('Output', output_filename)
         # Append a unique identifier if the file already exists in the Output folder
-        if output_filename in os.listdir('./Output'):
+        if output_filename in os.listdir('Output'):
             base, ext = os.path.splitext(output_filename)
             i = 1
-            while f'{base}({i}){ext}' in os.listdir('./Output'):
+            while f'{base}({i}){ext}' in os.listdir('Output'):
                 i += 1
             output_filename = f'{base}({i}){ext}'
         return output_filename
 
-    @staticmethod
-    def save_csv(final_dataframe, output_filename):
-        # Ensure the Output directory exists
-        os.makedirs('./Output', exist_ok=True)
+    def save_csv(self, output_filename):
         # Save the final DataFrame as a CSV file in the Output directory
-        final_dataframe.to_csv(f'Output/{output_filename}', index=False)
+        self.dataframe.to_csv(output_filename, index=False)
 
 def main():
-    # Load the first CSV file in the current directory
-    input_dataframe = CSVProcessor.load_first_csv()
+    # Prompt the user for the input filename
+    input_filename = input('Enter the input filename: ')
+    # Initialize a CSVProcessor object
+    csv_processor = CSVProcessor(input_filename)
+    # Load the CSV file
+    csv_processor.load_csv()
     # Verify the CSV has the expected headers
-    CSVProcessor.verify_csv(input_dataframe)
+    csv_processor.verify_csv()
     # Preprocess the DataFrame and group by Product Name
-    final_dataframe = CSVProcessor.preprocess_df(input_dataframe)
-    # Get the output filename from the user
-    output_filename = CSVProcessor.get_output_filename()
+    csv_processor.preprocess_df()
+    # Get the output filename
+    output_filename = csv_processor.get_output_filename()
     # Save the final DataFrame as a CSV file
-    CSVProcessor.save_csv(final_dataframe, output_filename)
+    csv_processor.save_csv(output_filename)
 
 if __name__ == "__main__":
     main()
