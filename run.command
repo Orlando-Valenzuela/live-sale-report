@@ -9,18 +9,9 @@ if ! command -v git &>/dev/null; then
 fi
 
 # Check if the repository directory exists
-if [ ! -d "./live-sale-report" ]; then
+if [ ! -d "./" ]; then
     # Clone the repository if it doesn't exist
-    git clone "https://github.com/Orlando-Valenzuela/live-sale-report.git"
-else
-    # Change to the repository directory
-    cd "./live-sale-report"
-
-    # Update the local repository
-    git pull https://github.com/Orlando-Valenzuela/live-sale-report.git
-
-    # Change back to the previous directory
-    cd ..
+    git clone https://github.com/Orlando-Valenzuela/live-sale-report.git .
 fi
 
 # Read the contents of requirements.txt
