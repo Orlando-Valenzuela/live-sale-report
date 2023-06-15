@@ -1,22 +1,30 @@
 #!/bin/bash
 
-# Change working path
 cd "$(dirname "$0")"
 
-# Check if Python 3 is installed
-if ! command -v python3 &>/dev/null; then
-    echo "Python 3 is not installed. Please install Python 3 before running this script."
+# Check if Git is installed
+if ! command -v git &>/dev/null; then
+    echo "Git is not installed. Please install Git before running this script."
     exit 1
 fi
 
-# Check if pip3 is installed
-if ! command -v pip3 &>/dev/null; then
-    echo "pip3 is not installed. Please install pip3 before running this script."
-    exit 1
+# Check if the repository directory exists
+if [ ! -d "./live-sale-report" ]; then
+    # Clone the repository if it doesn't exist
+    git clone "https://github.com/Orlando-Valenzuela/live-sale-report.git"
+else
+    # Change to the repository directory
+    cd "./live-sale-report"
+
+    # Update the local repository
+    git pull https://github.com/Orlando-Valenzuela/live-sale-report.git
+
+    # Change back to the previous directory
+    cd ..
 fi
 
 # Read the contents of requirements.txt
-requirements=$(cat requirements.txt)
+requirements=$(cat live-sale-report/requirements.txt)
 
 # Iterate over each value in requirements.txt
 while IFS= read -r line; do
@@ -32,7 +40,7 @@ while IFS= read -r line; do
 done <<< "$requirements"
 
 # Verify all dependencies are up to date
-pip3 install --upgrade -r requirements.txt
+pip3 install --upgrade -r live-sale-report/requirements.txt
 
 # Run livesale.py
-python3 livesale.py
+python3 live-sale-report/livesale.py
